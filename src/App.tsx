@@ -4,6 +4,7 @@ import { ExecutiveOverview } from './components/ExecutiveOverview';
 import { StudentRoster } from './components/StudentRoster';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { InterventionHub } from './components/InterventionHub';
+import { PlacementHub } from './components/PlacementHub';
 import { DecisionCopilot } from './components/DecisionCopilot';
 import { RoiForecaster } from './components/RoiForecaster';
 import { AddStudentModal } from './components/AddStudentModal';
@@ -26,7 +27,7 @@ export default function App() {
     return INITIAL_STUDENTS;
   });
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'roster' | 'interventions' | 'copilot' | 'roi'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'roster' | 'interventions' | 'placement' | 'copilot' | 'roi'>('overview');
   const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<Student | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
@@ -73,6 +74,24 @@ export default function App() {
     const projectedRetentionRate = Math.min(96.5, Number((retentionRate + 4.8).toFixed(1)));
     const tuitionProtected = Math.round(critical * 18000 + atRisk * 8000);
 
+    const placementEligible = students.filter(
+      (s) => s.cgpa >= 2.9 && s.backlogs <= 1
+    ).length;
+    const tier1Ready = students.filter(
+      (s) => s.placement?.status === 'Tier-1 Ready'
+    ).length;
+    const placed = students.filter(
+      (s) => s.placement?.status === 'Placed'
+    ).length;
+    const avgMock = total
+      ? Number(
+          (
+            students.reduce((acc, s) => acc + (s.placement?.mockInterviewScore || 60), 0) /
+            total
+          ).toFixed(1)
+        )
+      : 65;
+
     return {
       totalStudents: total,
       criticalCount: critical,
@@ -86,6 +105,12 @@ export default function App() {
       projectedRetentionRate,
       activeInterventionsCount: activeInterventions,
       estimatedTuitionProtected: tuitionProtected,
+      placementEligibleCount: placementEligible,
+      tier1ReadyCount: tier1Ready,
+      placedCount: placed,
+      averageMockScore: avgMock,
+      highestPackageOffered: '$165,000 / yr (38 LPA)',
+      averagePlacementPackage: '$126,000 / yr (26 LPA)',
     };
   }, [students]);
 
@@ -217,6 +242,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         criticalCount={metrics.criticalCount}
+        tier1PlacementCount={metrics.tier1ReadyCount}
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenBriefingModal={() => setIsDeanBriefingModalOpen(true)}
         onExportCsv={() => handleExportCsv()}
@@ -260,6 +286,15 @@ export default function App() {
             onSelectStudent={(s) => setSelectedStudentForDossier(s)}
             onOpenInterventionModal={handleOpenInterventionModal}
             onUpdateStudent={handleUpdateStudent}
+          />
+        )}
+
+        {activeTab === 'placement' && (
+          <PlacementHub
+            students={students}
+            onSelectStudent={(s) => setSelectedStudentForDossier(s)}
+            onOpenInterventionModal={handleOpenInterventionModal}
+            onExportCsv={handleExportCsv}
           />
         )}
 

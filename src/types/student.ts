@@ -8,7 +8,10 @@ export type InterventionType =
   | 'Financial Support Grant'
   | 'Mental Wellness Referral'
   | 'Faculty Advisor Check-in'
-  | 'Attendance Contract';
+  | 'Attendance Contract'
+  | 'Placement Bootcamp Enrollment'
+  | 'Mock Technical Interview Sprint'
+  | 'Backlog Clearance Fast-Track';
 
 export type InterventionStatus = 'Recommended' | 'Dispatched' | 'In Progress' | 'Completed' | 'Dismissed';
 
@@ -30,6 +33,66 @@ export interface ShapWeight {
   feature: string;
   impact: number; // positive increases risk, negative decreases risk
   description: string;
+}
+
+export type PlacementStatus = 'Tier-1 Ready' | 'Eligible with Skill Gaps' | 'Academic Risk / Ineligible' | 'Placed';
+
+export interface SkillProficiency {
+  name: string;
+  category: 'Languages' | 'Frameworks' | 'Core CS' | 'Tools & Cloud' | 'Domain';
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  score: number; // 0 - 100
+}
+
+export interface PlacementProfile {
+  status: PlacementStatus;
+  targetRole: string;
+  skills: SkillProficiency[];
+  dsaScore: number; // 0 - 100
+  aptitudeScore: number; // 0 - 100
+  mockInterviewScore: number; // 0 - 100
+  projectsCount: number;
+  internshipExperience: boolean;
+  certifications: string[];
+  placedCompany?: string;
+  placedPackage?: string;
+  dreamCompanies: string[];
+  resumeScore?: number; // 0 - 100
+}
+
+export interface CompanyRequirement {
+  id: string;
+  name: string;
+  tier: 'Super Dream' | 'Dream' | 'Core Engineering' | 'Mass Recruiter';
+  targetRole: string;
+  minCgpa: number; // 0.0 - 4.0
+  maxBacklogs: number;
+  minAttendance: number;
+  requiredSkills: string[];
+  preferredSkills: string[];
+  minDsaScore: number;
+  minAptitudeScore: number;
+  packageCtc: string;
+  driveDate: string;
+  openPositions: number;
+  status: 'Upcoming' | 'Active Registrations' | 'Interview Rounds' | 'Completed';
+  category: 'Tech Titan' | 'Fintech' | 'Semiconductor' | 'Industrial' | 'Consulting';
+}
+
+export interface AIPlacementAnalysis {
+  overallReadinessIndex: number;
+  readinessCategory: string;
+  strongMatchCompanies: string[];
+  reachCompanies: string[];
+  topMissingSkills: string[];
+  cgpaAssessment: string;
+  fourWeekActionPlan: {
+    week: string;
+    focus: string;
+    tasks: string[];
+  }[];
+  interviewAdvice: string;
+  recommendedCapstoneProject: string;
 }
 
 export interface Student {
@@ -75,6 +138,9 @@ export interface Student {
   keyRiskFactors: string[];
   shapFeatureWeights: ShapWeight[];
   
+  // Career & Placement Intelligence
+  placement: PlacementProfile;
+
   // Advising & Case Management
   assignedAdvisor: string;
   lastAdvisorNote: string;
@@ -94,6 +160,14 @@ export interface CampusMetrics {
   projectedRetentionRate: number;
   activeInterventionsCount: number;
   estimatedTuitionProtected: number;
+  
+  // Placement Metrics
+  placementEligibleCount: number;
+  tier1ReadyCount: number;
+  placedCount: number;
+  averageMockScore: number;
+  highestPackageOffered: string;
+  averagePlacementPackage: string;
 }
 
 export interface AIRecoveryRoadmapStep {

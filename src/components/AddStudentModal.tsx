@@ -132,6 +132,23 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, onAdd
       ],
       assignedAdvisor,
       lastAdvisorNote: 'New student profile created in system via administrative telemetry ingestion.',
+      placement: {
+        status: cgpa >= 3.4 && computedRisk < 40 ? 'Tier-1 Ready' : cgpa >= 2.8 ? 'Eligible with Skill Gaps' : 'Academic Risk / Ineligible',
+        targetRole: `${department} Engineer`,
+        skills: [
+          { name: 'Core Computing Fundamentals', category: 'Core CS', level: cgpa >= 3.0 ? 'Intermediate' : 'Beginner', score: Math.round(cgpa * 22) },
+          { name: 'Applied Programming & Scripting', category: 'Languages', level: 'Intermediate', score: 65 },
+          { name: 'Database & SQL', category: 'Core CS', level: 'Intermediate', score: 60 }
+        ],
+        dsaScore: Math.round(Math.min(95, Math.max(30, cgpa * 22 + (100 - computedRisk) * 0.2))),
+        aptitudeScore: Math.round(Math.min(95, Math.max(40, cgpa * 20 + 20))),
+        mockInterviewScore: Math.round(Math.min(95, Math.max(40, (100 - computedRisk) * 0.7))),
+        projectsCount: 2,
+        internshipExperience: cgpa > 3.2,
+        certifications: [],
+        dreamCompanies: ['Microsoft', 'Amazon', 'Deloitte'],
+        resumeScore: Math.round(cgpa * 20)
+      },
       interventions: []
     };
 

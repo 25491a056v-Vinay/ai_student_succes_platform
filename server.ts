@@ -428,6 +428,158 @@ Format output strictly as JSON:
   }
 });
 
+// Placement & Career Readiness Intelligence Generator
+app.post('/api/ai/analyze-placement', async (req, res) => {
+  try {
+    const { student, targetCompany } = req.body;
+    if (!student) {
+      return res.status(400).json({ error: 'Student data is required' });
+    }
+
+    const ai = getGenAIClient();
+    if (ai) {
+      try {
+        const prompt = `
+You are the Chief Campus Placement & Career Readiness AI for top university talent.
+Analyze the following student's profile against competitive industry hiring benchmarks and generate a detailed employability diagnostic.
+
+STUDENT PROFILE:
+- Name: ${student.name}
+- Major: ${student.major}, Year: ${student.year}
+- Cumulative GPA: ${student.cgpa} / 4.0
+- Backlogs: ${student.backlogs}
+- Target Role: ${student.placement?.targetRole || 'Software Development Engineer'}
+- Technical Skills: ${JSON.stringify(student.placement?.skills || [])}
+- DSA & Problem Solving Score: ${student.placement?.dsaScore || 60}/100
+- Quantitative & Logical Aptitude: ${student.placement?.aptitudeScore || 65}/100
+- Mock Interview Score: ${student.placement?.mockInterviewScore || 60}/100
+- Projects Count: ${student.placement?.projectsCount || 2}
+- Target Recruiter Focus: ${targetCompany ? JSON.stringify(targetCompany) : 'Tier-1 Tech & Engineering (Google, Microsoft, Amazon, Qualcomm)'}
+
+TASK: Return strictly valid JSON ONLY (no markdown backticks or commentary):
+{
+  "overallReadinessIndex": number (0-100),
+  "readinessCategory": "Tier-1 Super Dream Qualified | High Potential with Tooling Gaps | Prerequisite & Backlog Remediation Needed",
+  "strongMatchCompanies": ["Company 1", "Company 2"],
+  "reachCompanies": ["Company 1", "Company 2"],
+  "topMissingSkills": ["Missing Skill 1 with explanation", "Missing Skill 2 with explanation"],
+  "cgpaAssessment": "Clear evaluation of their GPA vs typical campus recruiter cutoffs",
+  "fourWeekActionPlan": [
+    {"week": "Week 1", "focus": "Core DSA & Problem Patterns", "tasks": ["concrete task 1", "concrete task 2"]},
+    {"week": "Week 2", "focus": "System Design / Core Specialization", "tasks": ["concrete task 1", "concrete task 2"]},
+    {"week": "Week 3", "focus": "Industry-grade Project Polish", "tasks": ["concrete task 1", "concrete task 2"]},
+    {"week": "Week 4", "focus": "Mock Technical & Behavioral Sprints", "tasks": ["concrete task 1", "concrete task 2"]}
+  ],
+  "interviewAdvice": "Specific strategic advice for clearing technical and behavioral interview panels",
+  "recommendedCapstoneProject": "A specific high-impact project idea tailored to their target role"
+}
+`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          },
+        });
+
+        const responseText = response.text?.trim() || '{}';
+        const clean = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        return res.json({ success: true, analysis: parsed, source: 'gemini-3.8-flash' });
+      } catch (aiErr) {
+        console.warn('Gemini placement analysis call fell back to campus intelligence engine:', aiErr);
+      }
+    }
+
+    // Heuristic Placement Engine Fallback
+    const cgpa = student.cgpa || 2.5;
+    const dsa = student.placement?.dsaScore || 55;
+    const aptitude = student.placement?.aptitudeScore || 65;
+    const mock = student.placement?.mockInterviewScore || 58;
+
+    const readinessIndex = Math.min(98, Math.max(25, Math.round((cgpa / 4.0) * 35 + dsa * 0.35 + aptitude * 0.15 + mock * 0.15)));
+
+    const isTopTier = readinessIndex >= 82 && (student.backlogs === 0);
+    const isMediumTier = readinessIndex >= 60;
+
+    const strongMatches = isTopTier
+      ? ['Google', 'Microsoft', 'NVIDIA', 'Amazon']
+      : isMediumTier
+      ? ['Deloitte', 'Amazon (SDE-1)', 'Qualcomm', 'Infosys Digital']
+      : ['Campus Training Incubator', 'Deloitte Tech Analyst'];
+
+    const reachMatches = isTopTier
+      ? ['Palantir (Forward Deployed AI)', 'Goldman Sachs Strats']
+      : isMediumTier
+      ? ['Google SWE', 'Microsoft Cloud', 'NVIDIA']
+      : ['Qualcomm', 'Amazon', 'Deloitte'];
+
+    const fallbackAnalysis = {
+      overallReadinessIndex: readinessIndex,
+      readinessCategory: isTopTier
+        ? 'Tier-1 Super Dream Qualified'
+        : isMediumTier
+        ? 'High Potential with Tooling Gaps'
+        : 'Prerequisite & Backlog Remediation Needed',
+      strongMatchCompanies: strongMatches,
+      reachCompanies: reachMatches,
+      topMissingSkills: [
+        dsa < 75 ? 'Advanced Dynamic Programming & Graph Algorithms (LeetCode Medium-Hard proficiency)' : 'Production Microservices & Distributed Caching',
+        'End-to-End System Design & Scalability Trade-offs',
+        'Containerization & Automated Deployment (Docker / CI/CD pipelines)',
+      ],
+      cgpaAssessment: cgpa >= 3.4
+        ? `Exceptional academic standing (${cgpa} CGPA) clears the stringent 3.40+ cutoff for Super Dream recruiters (Google, Microsoft, Goldman Sachs).`
+        : cgpa >= 3.0
+        ? `Satisfactory CGPA (${cgpa}) satisfies baseline cutoffs for 85% of campus drives (Deloitte, Amazon, Qualcomm). Maintaining >3.0 is critical.`
+        : `Current CGPA (${cgpa}) falls below the 3.00/3.20 cutoff of Tier-1 drives. Prioritize academic grade recovery and campus amnesty options.`,
+      fourWeekActionPlan: [
+        {
+          week: 'Week 1',
+          focus: 'Core DSA & Problem Patterns',
+          tasks: [
+            'Master Two-Pointers, Sliding Window, and Tree Traversal patterns (30 LeetCode Mediums).',
+            'Conduct daily 45-minute timed coding assessments on institutional portal.',
+          ],
+        },
+        {
+          week: 'Week 2',
+          focus: 'System Design & Architectural Fundamentals',
+          tasks: [
+            'Study Horizontal Scaling, Load Balancing, SQL vs NoSQL sharding architectures.',
+            'Implement Redis caching and database indexing optimizations on existing repository.',
+          ],
+        },
+        {
+          week: 'Week 3',
+          focus: 'Industry-Grade Capstone Deployment',
+          tasks: [
+            'Containerize full-stack application with Docker and deploy to public cloud with live URL.',
+            'Refactor GitHub README with architectural diagrams, API benchmarks, and test coverage.',
+          ],
+        },
+        {
+          week: 'Week 4',
+          focus: 'Mock Technical & Behavioral Sprints',
+          tasks: [
+            'Complete 3 peer mock interviews using STAR methodology for behavioral leadership principles.',
+            'Review recruiter-specific technical question banks (Amazon 16 Principles, Google Engineering Standards).',
+          ],
+        },
+      ],
+      interviewAdvice: `When answering technical prompts, articulate your thought process aloud before writing code. For behavioral questions, utilize the STAR framework (Situation, Task, Action, Result) with quantitative impact metrics.`,
+      recommendedCapstoneProject: `Real-Time Distributed Collaborative Workspace with WebSockets, Redis pub/sub, and role-based access control, benchmarked under simulated load of 5,000 concurrent users.`,
+    };
+
+    return res.json({ success: true, analysis: fallbackAnalysis, source: 'campus-placement-engine' });
+  } catch (error: any) {
+    console.error('Error in /api/ai/analyze-placement:', error);
+    res.status(500).json({ error: error.message || 'Failed to analyze placement readiness' });
+  }
+});
+
 // Setup Vite in Dev or static in Prod
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';

@@ -20,10 +20,14 @@ import {
   ArrowRight,
   Shield,
   Loader2,
-  Check
+  Check,
+  Code2,
+  Building2,
+  Target
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Student, AIStudentAnalysis, AISimulationResult, Intervention } from '../types/student';
+import { Student, AIStudentAnalysis, AISimulationResult, Intervention, AIPlacementAnalysis } from '../types/student';
+import { RECRUITER_COMPANIES } from '../data/mockStudents';
 
 interface StudentDetailModalProps {
   student: Student;
@@ -38,8 +42,12 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   onOpenInterventionModal,
   onUpdateStudent,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'ai-plan' | 'simulation' | 'interventions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'placement' | 'ai-plan' | 'simulation' | 'interventions'>('overview');
   
+  // Placement AI Analysis state
+  const [placementAi, setPlacementAi] = useState<AIPlacementAnalysis | null>(null);
+  const [isPlacementAiLoading, setIsPlacementAiLoading] = useState(false);
+
   // AI Recovery Roadmap state
   const [aiAnalysis, setAiAnalysis] = useState<AIStudentAnalysis | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -95,6 +103,26 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
       console.error('Failed to generate AI plan:', err);
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  // Request AI Placement Readiness Analysis
+  const handleGeneratePlacementAi = async () => {
+    setIsPlacementAiLoading(true);
+    try {
+      const response = await fetch('/api/ai/analyze-placement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student }),
+      });
+      const data = await response.json();
+      if (data.analysis) {
+        setPlacementAi(data.analysis);
+      }
+    } catch (err) {
+      console.error('Failed to analyze placement readiness:', err);
+    } finally {
+      setIsPlacementAiLoading(false);
     }
   };
 
@@ -231,6 +259,18 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           >
             <Layers className="w-4 h-4" />
             <span>360° Profile &amp; Explainable AI</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('placement')}
+            className={`py-3 border-b-2 transition flex items-center space-x-2 whitespace-nowrap ${
+              activeTab === 'placement'
+                ? 'border-indigo-500 text-white font-bold'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Briefcase className="w-4 h-4 text-indigo-400" />
+            <span>Placement &amp; Skills Intelligence</span>
           </button>
 
           <button
@@ -410,6 +450,337 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     &ldquo;{student.lastAdvisorNote}&rdquo;
                   </p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: PLACEMENT & SKILLS INTELLIGENCE */}
+          {activeTab === 'placement' && (
+            <div className="space-y-6">
+              {/* Target Career Banner */}
+              <div className="p-5 rounded-xl border border-indigo-900/50 bg-gradient-to-r from-slate-950 via-indigo-950/30 to-slate-950 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                      Target Career Specialization
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        student.placement?.status === 'Placed'
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          : student.placement?.status === 'Tier-1 Ready'
+                          ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                          : student.placement?.status === 'Eligible with Skill Gaps'
+                          ? 'bg-indigo-950 text-indigo-300 border border-indigo-800'
+                          : 'bg-rose-950 text-rose-300 border border-rose-800'
+                      }`}
+                    >
+                      {student.placement?.status || 'Assessing'}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-extrabold text-white">
+                    {student.placement?.targetRole || 'Software Development Engineer'}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Dream Companies:{' '}
+                    <strong className="text-slate-200">
+                      {student.placement?.dreamCompanies.join(', ') || 'Google, Microsoft, Amazon'}
+                    </strong>
+                  </p>
+                </div>
+
+                {student.placement?.placedCompany ? (
+                  <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-800 text-right self-start md:self-auto">
+                    <div className="text-[10px] uppercase font-bold text-emerald-400">Secured Campus Offer</div>
+                    <div className="text-base font-extrabold text-white">{student.placement.placedCompany}</div>
+                    <div className="text-xs font-mono font-bold text-emerald-300">{student.placement.placedPackage}</div>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 self-start md:self-auto">
+                    <button
+                      onClick={handleGeneratePlacementAi}
+                      className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-300" />
+                      <span>Run AI Placement Diagnostic</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 4 Pillar Placement Scorecards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase">DSA &amp; Coding Ability</div>
+                  <div className="mt-2 flex items-baseline space-x-2">
+                    <span className="text-2xl font-extrabold text-sky-400">{student.placement?.dsaScore || 50}/100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-2">
+                    <div style={{ width: `${student.placement?.dsaScore || 50}%` }} className="bg-sky-500 h-full rounded-full" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-1">LeetCode / Algorithmic benchmark</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase">Mock Interview Score</div>
+                  <div className="mt-2 flex items-baseline space-x-2">
+                    <span className="text-2xl font-extrabold text-emerald-400">{student.placement?.mockInterviewScore || 60}/100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-2">
+                    <div style={{ width: `${student.placement?.mockInterviewScore || 60}%` }} className="bg-emerald-500 h-full rounded-full" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-1">Technical + Behavioral panels</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase">Quantitative Aptitude</div>
+                  <div className="mt-2 flex items-baseline space-x-2">
+                    <span className="text-2xl font-extrabold text-amber-400">{student.placement?.aptitudeScore || 65}/100</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-2">
+                    <div style={{ width: `${student.placement?.aptitudeScore || 65}%` }} className="bg-amber-500 h-full rounded-full" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-1">Logical &amp; numerical reasoning</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase">Verified Projects &amp; Exp</div>
+                  <div className="mt-2 text-2xl font-extrabold text-white">
+                    {student.placement?.projectsCount || 2} Projects
+                  </div>
+                  <div className="text-[11px] text-indigo-400 mt-2 font-medium">
+                    {student.placement?.internshipExperience ? '✓ Has Prior Internship' : 'Seeking First Internship'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Resume Score: {student.placement?.resumeScore || 65}/100</div>
+                </div>
+              </div>
+
+              {/* Technical Skills Inventory */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white flex items-center space-x-2">
+                    <Code2 className="w-4 h-4 text-sky-400" />
+                    <span>Verified Technical Skills Portfolio</span>
+                  </h4>
+                  <span className="text-xs text-slate-400">
+                    {student.placement?.skills?.length || 0} skills assessed
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {(student.placement?.skills || []).map((sk, idx) => (
+                    <div key={idx} className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">{sk.name}</span>
+                        <span className="text-[10px] font-mono font-semibold bg-slate-800 px-2 py-0.5 rounded text-sky-300">
+                          {sk.level} ({sk.score}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          style={{ width: `${sk.score}%` }}
+                          className={`h-full rounded-full ${
+                            sk.score >= 80 ? 'bg-emerald-500' : sk.score >= 60 ? 'bg-sky-500' : 'bg-amber-500'
+                          }`}
+                        />
+                      </div>
+                      <div className="text-[10px] text-slate-400">Category: {sk.category}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recruiter Qualification & Cutoff Matrix */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-white flex items-center space-x-2">
+                      <Building2 className="w-4 h-4 text-indigo-400" />
+                      <span>Corporate Recruiter Qualification Checker</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Real-time assessment of {student.name}&apos;s academic standing against campus hiring cutoffs.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {RECRUITER_COMPANIES.map((company) => {
+                    const meetsCgpa = student.cgpa >= company.minCgpa;
+                    const meetsBacklogs = student.backlogs <= company.maxBacklogs;
+                    const isQualified = meetsCgpa && meetsBacklogs;
+
+                    return (
+                      <div
+                        key={company.id}
+                        className={`p-3.5 rounded-lg border text-xs space-y-2 transition ${
+                          isQualified
+                            ? 'bg-emerald-950/20 border-emerald-900/50'
+                            : 'bg-slate-900/80 border-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-white">{company.name}</span>
+                            <span className="text-[10px] text-slate-400">({company.targetRole.split('(')[0]})</span>
+                          </div>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              isQualified
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                : 'bg-rose-950 text-rose-300 border border-rose-800'
+                            }`}
+                          >
+                            {isQualified ? '✓ Cutoffs Met' : 'Ineligible'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                          <span>
+                            CGPA Gate: <strong className={meetsCgpa ? 'text-slate-200' : 'text-rose-400'}>&ge; {company.minCgpa.toFixed(1)}</strong> (Yours: {student.cgpa.toFixed(2)})
+                          </span>
+                          <span>
+                            Backlog Gate: <strong className={meetsBacklogs ? 'text-slate-200' : 'text-rose-400'}>&le; {company.maxBacklogs}</strong> (Yours: {student.backlogs})
+                          </span>
+                        </div>
+
+                        {!isQualified && (
+                          <div className="text-[11px] text-rose-300 bg-rose-950/50 p-1.5 rounded border border-rose-900/40">
+                            Fails gate: {meetsCgpa ? '' : `CGPA is ${(company.minCgpa - student.cgpa).toFixed(2)} below cutoff. `}{meetsBacklogs ? '' : `${student.backlogs} active backlogs must be cleared.`}
+                          </div>
+                        )}
+
+                        {isQualified && (
+                          <div className="text-[11px] text-emerald-300">
+                            Package: <strong>{company.packageCtc}</strong> &bull; Drive date: {company.driveDate}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Gemini AI Career & Interview Coach */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Gemini AI Career Readiness &amp; 4-Week Prep Coach</span>
+                  </h4>
+                  {!placementAi && !isPlacementAiLoading && (
+                    <button
+                      onClick={handleGeneratePlacementAi}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition"
+                    >
+                      Generate AI Action Plan
+                    </button>
+                  )}
+                </div>
+
+                {isPlacementAiLoading && (
+                  <div className="text-center py-12 space-y-3">
+                    <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
+                    <p className="text-sm font-semibold text-white">Synthesizing candidate profile with Gemini 3.8 Flash...</p>
+                    <p className="text-xs text-slate-400">Comparing technical competencies against competitive corporate hiring benchmarks</p>
+                  </div>
+                )}
+
+                {placementAi && (
+                  <div className="space-y-5 text-xs">
+                    {/* Diagnostic Summary */}
+                    <div className="p-4 rounded-xl border border-indigo-900/60 bg-indigo-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-indigo-400">Employability Readiness Index</div>
+                        <div className="text-2xl font-extrabold text-white mt-0.5">{placementAi.overallReadinessIndex} / 100</div>
+                        <div className="text-xs text-indigo-300 font-medium">{placementAi.readinessCategory}</div>
+                      </div>
+                      <div className="text-right sm:max-w-xs text-[11px] text-slate-300">
+                        {placementAi.cgpaAssessment}
+                      </div>
+                    </div>
+
+                    {/* Strong Match vs Reach Companies */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl border border-emerald-900/40 bg-emerald-950/20 space-y-2">
+                        <div className="font-bold text-emerald-300 uppercase tracking-wider text-[11px]">
+                          High Probability Match Recruiters:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {placementAi.strongMatchCompanies.map((c, i) => (
+                            <span key={i} className="px-2 py-1 rounded bg-emerald-950 border border-emerald-800 text-emerald-200 font-semibold text-xs">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-amber-900/40 bg-amber-950/20 space-y-2">
+                        <div className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">
+                          Target Reach Opportunities:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {placementAi.reachCompanies.map((c, i) => (
+                            <span key={i} className="px-2 py-1 rounded bg-amber-950 border border-amber-800 text-amber-200 font-semibold text-xs">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missing Skills Gap */}
+                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-2">
+                      <div className="font-bold text-rose-300 uppercase tracking-wider text-[11px]">
+                        Priority Technical Gaps to Remediate:
+                      </div>
+                      <ul className="space-y-1.5 text-slate-300">
+                        {placementAi.topMissingSkills.map((gap, i) => (
+                          <li key={i} className="flex items-start space-x-2">
+                            <ArrowRight className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 4-Week Prep Sprint */}
+                    <div className="space-y-3">
+                      <div className="font-bold text-white uppercase tracking-wider text-[11px]">
+                        Personalized 4-Week Placement Prep Roadmap:
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {placementAi.fourWeekActionPlan.map((wk, idx) => (
+                          <div key={idx} className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+                            <div className="font-mono font-bold text-sky-400">{wk.week}</div>
+                            <div className="font-bold text-white text-[11px]">{wk.focus}</div>
+                            <ul className="space-y-1 text-[11px] text-slate-300">
+                              {wk.tasks.map((t, ti) => (
+                                <li key={ti} className="flex items-start space-x-1">
+                                  <span className="text-sky-400 font-bold">&bull;</span>
+                                  <span>{t}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recommended Project & Interview Strategy */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-1.5">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Recommended Capstone Project</div>
+                        <p className="text-slate-200 leading-relaxed">{placementAi.recommendedCapstoneProject}</p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-1.5">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Strategic Interview Advisory</div>
+                        <p className="text-slate-200 leading-relaxed">{placementAi.interviewAdvice}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

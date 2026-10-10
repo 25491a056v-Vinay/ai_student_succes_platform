@@ -9,13 +9,15 @@ import {
   AlertTriangle, 
   Plus, 
   Sparkles,
-  Download
+  Download,
+  Briefcase
 } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'overview' | 'roster' | 'interventions' | 'copilot' | 'roi';
-  setActiveTab: (tab: 'overview' | 'roster' | 'interventions' | 'copilot' | 'roi') => void;
+  activeTab: 'overview' | 'roster' | 'interventions' | 'placement' | 'copilot' | 'roi';
+  setActiveTab: (tab: 'overview' | 'roster' | 'interventions' | 'placement' | 'copilot' | 'roi') => void;
   criticalCount: number;
+  tier1PlacementCount?: number;
   onOpenAddModal: () => void;
   onOpenBriefingModal: () => void;
   onExportCsv: () => void;
@@ -25,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   criticalCount,
+  tier1PlacementCount,
   onOpenAddModal,
   onOpenBriefingModal,
   onExportCsv,
@@ -88,6 +91,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Workflow className="w-4 h-4 text-emerald-400" />
               <span>Intervention Hub</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('placement')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                activeTab === 'placement'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 text-indigo-400" />
+              <span>Career &amp; Placements</span>
+              {tier1PlacementCount !== undefined && tier1PlacementCount > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                  {tier1PlacementCount} Ready
+                </span>
+              )}
             </button>
 
             <button
@@ -171,6 +191,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           Interventions
+        </button>
+        <button
+          onClick={() => setActiveTab('placement')}
+          className={`px-3 py-1 text-xs rounded font-medium whitespace-nowrap ${
+            activeTab === 'placement' ? 'bg-slate-800 text-white' : 'text-slate-400'
+          }`}
+        >
+          Placements
         </button>
         <button
           onClick={() => setActiveTab('copilot')}
