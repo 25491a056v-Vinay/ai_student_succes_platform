@@ -1,0 +1,6 @@
+{
+  "name": "Smart Campus Analytics & AI Student Success Platform",
+  "description": "Predictive analytics and AI decision intelligence platform empowering campus administrators to identify at-risk students, simulate outcomes, and deploy proactive interventions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
